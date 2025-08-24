@@ -2,202 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Moon Phase Tracker</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background: #0a0f22;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-    }
-
-    h1 {
-      margin: 20px 0;
-      font-size: 1.8em;
-    }
-
-    #todayMoon {
-      text-align: center;
-      margin: 20px 0;
-    }
-
-    #todayMoon .moonSVG {
-      display: block;
-      margin: auto;
-    }
-
-    #moonDetails {
-      margin-top: 10px;
-      font-size: 1.1em;
-      color: #ddd;
-    }
-
-    #sevenPanel {
-      display: none;
-      margin-top: 20px;
-      text-align: center;
-    }
-
-    #sevenPanel h2 {
-      margin-bottom: 10px;
-    }
-
-    .forecastGrid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 10px;
-    }
-
-    .forecastItem {
-      background: #1a2238;
-      padding: 10px;
-      border-radius: 10px;
-      text-align: center;
-    }
-
-    .forecastItem .moonSVG {
-      width: 60px;
-      height: 60px;
-      margin: auto;
-    }
-
-    button {
-      background: #3949ab;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      font-size: 1em;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 15px;
-    }
-
-    button:hover {
-      background: #5c6bc0;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🌙 Moon Phase Tracker</h1>
-
-  <div id="todayMoon">
-    <div id="moonIcon"></div>
-    <div id="moonDetails"></div>
+  <div class="container">
+    <h1>🌙 Moon Phase Tracker</h1>
+    <div id="todayPanel">
+      <h2>Today</h2>
+      <div id="todayMoon"></div>
+    </div>
+    <button id="toggle7">Next 7 Days</button>
+    <div id="sevenPanel" class="hidden">
+      <h2>Next 7 Days</h2>
+      <div id="sevenGrid"></div>
+    </div>
   </div>
 
-  <button id="toggleBtn">Next 7 Days</button>
-
-  <div id="sevenPanel">
-    <h2>7-Day Forecast</h2>
-    <div class="forecastGrid" id="forecastGrid"></div>
-  </div>
-
-  <script>
-    function moonPhase(jdate) {
-      // Astronomical algorithm (simplified)
-      const n = jdate - 2451550.1;
-      const synodic = 29.53058867;
-      const phase = (n / synodic) % 1;
-      return phase < 0 ? phase + 1 : phase;
-    }
-
-    function moonSVG(p, size = 120) {
-      const r = size / 2;
-      const x = 2 * p - 1;
-      const absx = Math.abs(x);
-      const dir = x >= 0 ? 1 : -1;
-      const scaleX = 1 - absx;
-      const shift = dir * r * 0.65;
-      const id = 'm' + Math.random().toString(36).slice(2);
-
-      return `
-      <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" class="moonSVG">
-        <defs>
-          <radialGradient id="g-${id}" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stop-color="#111111"/>
-            <stop offset="60%" stop-color="#222222"/>
-            <stop offset="100%" stop-color="#000000"/>
-          </radialGradient>
-          <clipPath id="clip-${id}">
-            <circle cx="${r}" cy="${r}" r="${r}" />
-          </clipPath>
-          <mask id="mask-${id}">
-            <rect width="100%" height="100%" fill="black"/>
-            <g transform="translate(${r + shift}, ${r}) scale(${scaleX}, 1)">
-              <circle cx="0" cy="0" r="${r}" fill="white" />
-            </g>
-          </mask>
-        </defs>
-        <circle cx="${r}" cy="${r}" r="${r}" fill="#fff" stroke="#ccc" stroke-width="2"/>
-        <g clip-path="url(#clip-${id})" mask="url(#mask-${id})">
-          <circle cx="${r}" cy="${r}" r="${r}" fill="url(#g-${id})"/>
-        </g>
-      </svg>`;
-    }
-
-    function phaseName(p) {
-      if (p < 0.03 || p > 0.97) return "New Moon";
-      if (p < 0.22) return "Waxing Crescent";
-      if (p < 0.28) return "First Quarter";
-      if (p < 0.47) return "Waxing Gibbous";
-      if (p < 0.53) return "Full Moon";
-      if (p < 0.72) return "Waning Gibbous";
-      if (p < 0.78) return "Last Quarter";
-      return "Waning Crescent";
-    }
-
-    function renderToday() {
-      const now = new Date();
-      const j = now / 86400000 + 2440587.5;
-      const p = moonPhase(j);
-      const illum = Math.round(p * 100);
-
-      document.getElementById("moonIcon").innerHTML = moonSVG(p, 160);
-      document.getElementById("moonDetails").textContent =
-        ${phaseName(p)} — ${illum}% illuminated;
-    }
-
-    function render7() {
-      const grid = document.getElementById("forecastGrid");
-      grid.innerHTML = "";
-      const now = new Date();
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(now.getTime() + i * 86400000);
-        const j = d / 86400000 + 2440587.5;
-        const p = moonPhase(j);
-        const illum = Math.round(p * 100);
-
-        const div = document.createElement("div");
-        div.className = "forecastItem";
-        div.innerHTML = `
-          <div>${d.toLocaleDateString(undefined, { weekday: "short" })}</div>
-          ${moonSVG(p, 80)}
-          <div style="font-size:0.8em">${phaseName(p)}</div>
-          <div style="font-size:0.7em">${illum}%</div>
-        `;
-        grid.appendChild(div);
-      }
-    }
-
-    // Toggle 7-day panel
-    document.getElementById("toggleBtn").onclick = () => {
-      const p = document.getElementById("sevenPanel");
-      if (p.style.display === "none" || p.style.display === "") {
-        p.style.display = "block";
-        render7();
-      } else {
-        p.style.display = "none";
-      }
-    };
-
-    renderToday();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
